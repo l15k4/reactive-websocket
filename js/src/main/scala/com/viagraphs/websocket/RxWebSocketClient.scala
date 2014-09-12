@@ -59,7 +59,7 @@ class RxWebSocketClient(val url: Url, onClose: OnClose[WebSocket] => Unit, onErr
    */
   private def init(): Channel = {
     val ws = new WebSocket(url.stringify)
-    val outgoing = PublishSubject[String]().multicast(ReplaySubject().lift(o => o.dumpJson("OUTGOING")))
+    val outgoing = PublishSubject[String]().multicast(ReplaySubject().lift(o => o.dumpJson("OUTGOING", Console.CYAN)))
     outgoing.subscribe {  // waits until `outgoing.connect()` before sending outgoing messages
       msg =>
         ws.send(msg) // handling just onNext, there is nothing we can do about error or complete
@@ -99,28 +99,29 @@ class RxWebSocketClient(val url: Url, onClose: OnClose[WebSocket] => Unit, onErr
 
   implicit class ObservableExtensions(obs: Observable[String]) {
 
-    def dumpJson(prefix: String): Observable[String] = {
+    def dumpJson(prefix: String, color: String = Console.YELLOW): Observable[String] = {
+      def --> =  color + prefix + "-->" + Console.RESET
       Observable.create { observer =>
         obs.unsafeSubscribe(
           new Observer[String] {
             private[this] var pos = 0
 
             def onNext(elem: String): Future[Ack] = {
-              println(s"$pos: $prefix-->${stringify(parse(elem), space = 2)}")
+              println(s"$pos: ${-->}${stringify(parse(elem), space = 2)}")
               pos += 1
               val f = observer.onNext(elem)
-              f.onCancel { pos += 1; println(s"$pos: $prefix-->canceled") }
+              f.onCancel { pos += 1; println(s"$pos: ${-->}canceled") }
               f
             }
 
             def onError(ex: Throwable) = {
-              println(s"$pos: $prefix-->$ex")
+              println(s"$pos: ${-->}$ex")
               pos += 1
               observer.onError(ex)
             }
 
             def onComplete() = {
-              println(s"$pos: $prefix-->completed")
+              println(s"$pos: ${-->}completed")
               pos += 1
               observer.onComplete()
             }

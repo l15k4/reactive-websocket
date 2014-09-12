@@ -14,7 +14,7 @@ object Build extends sbt.Build {
   val sharedSettings =
     Seq(
       organization := "com.viagraphs.websocket",
-      version := "0.0.1",
+      version := "0.0.1-SNAPSHOT",
       scalaVersion := "2.11.2",
       traceLevel := 0,
       resolvers += Resolver.mavenLocal,
