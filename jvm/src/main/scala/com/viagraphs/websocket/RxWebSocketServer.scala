@@ -4,10 +4,10 @@ import java.net.InetSocketAddress
 import java.util
 
 import monifu.concurrent.Scheduler.Implicits.global
-import monifu.reactive.api.Ack.Continue
-import monifu.reactive.subjects.{ConnectableSubject, PublishSubject}
-import monifu.reactive.{Observer, Subject}
-
+import monifu.reactive.Ack.Continue
+import monifu.reactive._
+import monifu.reactive.channels.SubjectChannel
+import monifu.reactive.subjects.PublishSubject
 import org.java_websocket.drafts.Draft
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -27,40 +27,44 @@ import scala.collection.mutable
  */
 class RxWebSocketServer(fbHandler: FallbackHandler, epHandlers: List[EndpointHandler], address: InetSocketAddress, drafts: List[Draft]) {
 
-  protected var channel = init()
+  protected var channels = init()
 
   /**
    * @param msg serialized JSON message to be broadcast to all websockets
    */
-  def send(msg: OutgoingMsg): Unit = {
-    channel.out.onNext(msg)
+  def send(msg: Outgoing): Unit = {
+    channels.out.pushNext(msg)
   }
 
   /** @return Observable of incoming messages */
-  def in = channel.in
+  def in = channels.in
 
   /** @return Observer of outgoing messages */
-  def out: Observer[OutgoingMsg] = channel.out
+  def out: Channel[Outgoing] = channels.out
 
   def start(daemon: Boolean = false) =
     if (daemon) {
-      val t = new Thread(channel.server)
+      val t = new Thread(channels.server)
       t.setDaemon(true)
       t.start()
     } else {
-      channel.server.start()
+      channels.server.start()
     }
 
   /** stop server */
-  def stop() = Option(channel).foreach { ch =>
+  def stop() = Option(channels).foreach { ch =>
     ch.server.stop()
-    ch.in.onComplete()
-    ch.out.onComplete()
+    ch.in.pushComplete()
+    ch.out.pushComplete()
   }
 
-  def init(): Channel = {
-    val incoming = PublishSubject[Event[WebSocket]]().replay()
-    val outgoing = PublishSubject[OutgoingMsg]().replay()
+
+  def init(): Channels = {
+    val connectableInput = PublishSubject[Event[WebSocket]]().publish()
+    val incomingChannel = SubjectChannel(connectableInput, BufferPolicy.BackPressured(2))
+
+    val connectableOutput = PublishSubject[Outgoing]().publish()
+    val outgoingChannel = SubjectChannel(connectableOutput, BufferPolicy.BackPressured(2))
     val server = new WebSocketServer(address, 1, drafts.asJava) {
 
       /** A little WebSocketServer hack that allows for having a dedicated worker thread for a shared handler instance */
@@ -72,44 +76,44 @@ class RxWebSocketServer(fbHandler: FallbackHandler, epHandlers: List[EndpointHan
         }
         ws.workerThread.put(ws)
         // the only place we can get notified Server booted up successfully
-        incoming.connect()
-        outgoing.connect()
+        connectableInput.connect()
+        connectableOutput.connect()
       }
 
       def onError(ws: WebSocket, ex: Exception): Unit = { // this is a fatal server error
         println(ex.getMessage)
         ex.printStackTrace()
-        incoming.onError(ex)
-        outgoing.onError(ex)
+        incomingChannel.pushError(ex)
+        outgoingChannel.pushError(ex)
         stop()
-        channel = init() // dead simple resilience
+        channels = init() // dead simple resilience
         start()
       }
 
-      override def onWebsocketError(ws: WebSocket, ex: Exception): Unit = incoming.onNext(OnError(ws, ex))
-      def onOpen(ws: WebSocket, hs: ClientHandshake): Unit = incoming.onNext(OnOpen(ws))
-      def onMessage(ws: WebSocket, msg: String): Unit = incoming.onNext(OnMessage(ws, msg))
-      def onClose(ws: WebSocket, code: Int, reason: String, remote: Boolean): Unit = incoming.onNext(OnClose(ws, code, reason, remote))
+      override def onWebsocketError(ws: WebSocket, ex: Exception): Unit = incomingChannel.pushNext(OnError(ws, ex))
+      def onOpen(ws: WebSocket, hs: ClientHandshake): Unit = incomingChannel.pushNext(OnOpen(ws))
+      def onMessage(ws: WebSocket, msg: String): Unit = incomingChannel.pushNext(InMsg(ws, msg))
+      def onClose(ws: WebSocket, code: Int, reason: String, remote: Boolean): Unit = incomingChannel.pushNext(OnClose(ws, code, reason, remote))
     }
 
     /** Each handler is interested only in connections coming to particular rest endpoint */
     val endpointNames = epHandlers.map(_.resourceDescriptor).toSet
     epHandlers.foreach(
       h => h.handle(
-        Channel(
+        HandlerChannels(
           server,
-          incoming.filter(_.ws.getResourceDescriptor == h.resourceDescriptor),
-          outgoing
+          incomingChannel.filter(_.ws.getResourceDescriptor == h.resourceDescriptor),
+          outgoingChannel
         )
       )
     )
 
     /** Fallback handler is interested in all connections that don't match any of declared rest endpoint */
     fbHandler.handle(
-      Channel(
+      HandlerChannels(
         server,
-        incoming.filter(e => !endpointNames.contains(e.ws.getResourceDescriptor)),
-        outgoing
+        incomingChannel.filter(e => !endpointNames.contains(e.ws.getResourceDescriptor)),
+        outgoingChannel
       )
     )
 
@@ -119,7 +123,7 @@ class RxWebSocketServer(fbHandler: FallbackHandler, epHandlers: List[EndpointHan
       *  - arbitrary group of connections
       *  - concrete connection
       */
-    outgoing.subscribe { message => // waits until `outgoing.connect()` before sending outgoing messages
+    outgoingChannel.subscribe { message => // waits until `outgoing.connect()` before sending outgoing messages
       val sockets: mutable.Set[WebSocket] = server.connections().asInstanceOf[util.HashSet[WebSocket]].asScala
       message match {
         case BroadcastMsg(msg) => sockets.foreach(_.send(msg))
@@ -129,7 +133,7 @@ class RxWebSocketServer(fbHandler: FallbackHandler, epHandlers: List[EndpointHan
       }
       Continue
     }
-    Channel(server, incoming, outgoing)
+    Channels(server, incomingChannel, outgoingChannel)
   }
 }
 
@@ -143,11 +147,14 @@ object RxWebSocketServer {
     = new RxWebSocketServer(fallback, handlers, address, drafts)
 }
 
-case class Channel(server: WebSocketServer, in: Subject[Event[WebSocket],Event[WebSocket]], out: ConnectableSubject[OutgoingMsg, OutgoingMsg])
-//                                          ^ browsers calling us                                       ^ us broadcasting to browsers
+case class HandlerChannels(server: WebSocketServer, in: Observable[Event[WebSocket]], out: Channel[Outgoing])
+case class Channels(server: WebSocketServer, in: Channel[Event[WebSocket]], out: Channel[Outgoing])
+//                                            ^ browsers calling us          ^ us broadcasting to browsers
+
+
 
 trait Handler {
-  def handle(channel: Channel)
+  def handle(channel: HandlerChannels)
 }
 
 abstract class EndpointHandler(val endpoint: String) extends Handler {
@@ -155,8 +162,7 @@ abstract class EndpointHandler(val endpoint: String) extends Handler {
 }
 abstract class FallbackHandler extends Handler
 
-sealed trait OutgoingMsg { def msg: String }
-case class BroadcastMsg(msg: String) extends OutgoingMsg
-case class EndpointMsg(msg: String, endpoint: String) extends OutgoingMsg
-case class GroupMsg(msg: String, group: HashSet[WebSocket]) extends OutgoingMsg
-case class DirectMsg(msg: String, socket: WebSocket) extends OutgoingMsg
+case class BroadcastMsg(text: String) extends Outgoing
+case class EndpointMsg(text: String, endpoint: String) extends Outgoing
+case class GroupMsg(text: String, group: HashSet[WebSocket]) extends Outgoing
+case class DirectMsg(text: String, socket: WebSocket) extends Outgoing

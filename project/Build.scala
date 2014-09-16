@@ -1,13 +1,10 @@
 import sbt.Keys._
 import sbt._
-import utest.jsrunner.Plugin.internal.utestJsSettings
-import utest.jsrunner.Plugin.internal.utestJvmSettings
+import spray.revolver.RevolverPlugin._
 
 import scala.scalajs.sbtplugin.ScalaJSPlugin.ScalaJSKeys._
 import scala.scalajs.sbtplugin.ScalaJSPlugin._
 import scala.scalajs.sbtplugin.env.phantomjs.PhantomJSEnv
-
-import spray.revolver.RevolverPlugin._
 
 object Build extends sbt.Build {
 
@@ -18,6 +15,7 @@ object Build extends sbt.Build {
       scalaVersion := "2.11.2",
       traceLevel := 0,
       resolvers += Resolver.mavenLocal,
+      parallelExecution in Test := false,
       unmanagedSourceDirectories in Compile <+= baseDirectory(_ /  "shared" / "main" / "scala"),
       unmanagedSourceDirectories in Test <+= baseDirectory(_ / "shared" / "test" / "scala")
     )
@@ -28,13 +26,11 @@ object Build extends sbt.Build {
     project.in(file("jvm"))
       .settings(sharedSettings: _*)
       .settings(name := "server")
-      .settings(utestJvmSettings: _*)
       .settings(Revolver.settings: _*)
       .settings(
         libraryDependencies ++= Seq(
-          "org.monifu" %% "monifu" % "0.13.0",
+          "org.monifu" %% "monifu" % "0.14.0.M3",
           "org.java-websocket" % "Java-WebSocket" % "1.3.1-SNAPSHOT",
-          "com.lihaoyi" %% "utest" % "0.2.3" % "test",
           "com.lihaoyi" %% "upickle" % "0.2.4" % "test"
         ),
         fullClasspath in Revolver.reStart := (fullClasspath in Test).value,
@@ -50,12 +46,11 @@ object Build extends sbt.Build {
       .settings(name := "client")
       .settings(scalaJSSettings: _*)
       .settings(postLinkJSEnv := new PhantomJSEnv(autoExit = false))
-      .settings(utestJsSettings: _*)
       .settings(
         libraryDependencies ++= Seq(
           "org.scala-lang.modules.scalajs" %%% "scalajs-dom" % "0.6",
-          "org.monifu" %% "monifu-js" % "0.13.0",
-          "com.lihaoyi" %%% "utest" % "0.2.3" % "test"
+          "org.monifu" %% "monifu-js" % "0.14.0.M3",
+          "org.scala-lang.modules.scalajs" %% "scalajs-jasmine-test-framework" % scalaJSVersion % "test"
         ),
         requiresDOM := true,
         test in Test := (test in(Test, fastOptStage)).dependsOn(startTestServer in Project("jvm", file("jvm"))).value
