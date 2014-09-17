@@ -12,7 +12,7 @@ object Build extends sbt.Build {
     Seq(
       organization := "com.viagraphs.websocket",
       version := "0.0.1-SNAPSHOT",
-      scalaVersion := "2.11.2",
+      scalaVersion := "2.11.0",
       traceLevel := 0,
       resolvers += Resolver.mavenLocal,
       parallelExecution in Test := false,
