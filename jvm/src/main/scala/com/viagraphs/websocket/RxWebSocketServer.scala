@@ -3,7 +3,7 @@ package com.viagraphs.websocket
 import java.net.InetSocketAddress
 import java.util
 
-import monifu.concurrent.Scheduler.Implicits.global
+import monifu.concurrent.Implicits.globalScheduler
 import monifu.reactive.Ack.Continue
 import monifu.reactive._
 import monifu.reactive.channels.SubjectChannel
@@ -60,11 +60,13 @@ class RxWebSocketServer(fbHandler: FallbackHandler, epHandlers: List[EndpointHan
 
 
   def init(): Channels = {
-    val connectableInput = PublishSubject[Event[WebSocket]]().publish()
-    val incomingChannel = SubjectChannel(connectableInput, BufferPolicy.BackPressured(2))
+    val inputSubject = PublishSubject[Event[WebSocket]]
+    val connectableInput = PublishSubject[Event[WebSocket]].multicast(inputSubject)
+    val incomingChannel = SubjectChannel(inputSubject, BufferPolicy.BackPressured(2))
 
-    val connectableOutput = PublishSubject[Outgoing]().publish()
-    val outgoingChannel = SubjectChannel(connectableOutput, BufferPolicy.BackPressured(2))
+    val outputSubject = PublishSubject[Outgoing]
+    val connectableOutput = PublishSubject[Outgoing].multicast(outputSubject)
+    val outgoingChannel = SubjectChannel(outputSubject, BufferPolicy.BackPressured(2))
     val server = new WebSocketServer(address, 1, drafts.asJava) {
 
       /** A little WebSocketServer hack that allows for having a dedicated worker thread for a shared handler instance */

@@ -4,7 +4,7 @@ import monifu.concurrent.Scheduler
 import monifu.reactive.Ack.{Cancel, Continue}
 import monifu.reactive.channels.SubjectChannel
 import monifu.reactive.internals.FutureAckExtensions
-import monifu.reactive.subjects.PublishSubject
+import monifu.reactive.subjects.{ReplaySubject, PublishSubject}
 import monifu.reactive._
 import org.scalajs.dom
 import org.scalajs.dom.{CloseEvent, ErrorEvent, MessageEvent, WebSocket}
@@ -65,8 +65,9 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
    */
   private def init(): Channels = {
     val ws = new WebSocket(url.stringify)
-    val connectableOutput = PublishSubject[OutMsg]().multicast(PublishSubject().lift(o => o.dumpJson("client -->", Console.RED)))
-    val outgoingChannel = SubjectChannel(connectableOutput, BufferPolicy.BackPressured(2))
+    val outgoingSubject = PublishSubject[OutMsg]()
+    val connectableOutput = PublishSubject[OutMsg]().multicast(outgoingSubject)
+    val outgoingChannel = SubjectChannel(outgoingSubject, BufferPolicy.BackPressured(2))
     outgoingChannel.subscribe {
       msg =>
         @tailrec def send(m: String, attempt: Int = 0): Future[Ack] = ws.readyState match {
@@ -84,16 +85,18 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
         send(msg.text)
     }
 
-    val connectableInput = PublishSubject[InMsg[WebSocket]]().multicast(PublishSubject().lift(o => o.dumpJson("client <--", Console.GREEN)))
-    val incomingChannel = SubjectChannel(connectableInput, BufferPolicy.BackPressured(5))
+    val incomingSubject = PublishSubject[InMsg[WebSocket]]
+    val connectableInput = PublishSubject[InMsg[WebSocket]].multicast(incomingSubject)
+    val incomingChannel = SubjectChannel(incomingSubject, BufferPolicy.BackPressured(5))
     ws.onmessage = (x: MessageEvent) => incomingChannel.pushNext(InMsg(ws, x.data.toString))
 
-    val lifecycle = PublishSubject[Event[WebSocket]]().replay()
-    ws.onopen = (x: dom.Event) => lifecycle.onNext(OnOpen(ws))
-    ws.onclose = (x: CloseEvent) => lifecycle.onNext(OnClose(ws, x.code, x.reason, x.wasClean))
-    ws.onerror = (x: ErrorEvent) => lifecycle.onNext(OnError(ws, new Exception(x.message)))
+    val lifecycleSubject = ReplaySubject[Event[WebSocket]]
+    val connectableLifecycle = PublishSubject[Event[WebSocket]]().multicast(lifecycleSubject)
+    ws.onopen = (x: dom.Event) => lifecycleSubject.onNext(OnOpen(ws))
+    ws.onclose = (x: CloseEvent) => lifecycleSubject.onNext(OnClose(ws, x.code, x.reason, x.wasClean))
+    ws.onerror = (x: ErrorEvent) => lifecycleSubject.onNext(OnError(ws, new Exception(x.message)))
 
-    lifecycle.subscribe(
+    lifecycleSubject.subscribe(
       new Observer[Event[WebSocket]] {
         def onError(ex: Throwable): Unit = scheduler.reportFailure(ex)
         def onComplete(): Unit = {
@@ -120,9 +123,9 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
       }
     )
 
-    lifecycle.connect()
+    connectableLifecycle.connect()
 
-    Channels(lifecycle, incomingChannel, outgoingChannel)
+    Channels(lifecycleSubject, incomingChannel, outgoingChannel)
   }
 
   implicit class ObservableExtensions[T <: Msg](obs: Observable[T]) {

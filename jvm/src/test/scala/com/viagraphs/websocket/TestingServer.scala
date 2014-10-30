@@ -2,8 +2,10 @@ package com.viagraphs.websocket
 
 import java.util.concurrent.TimeUnit
 
+import org.java_websocket.framing.CloseFrame
 import upickle._
-import monifu.concurrent.Scheduler.Implicits.global
+import monifu.concurrent.Implicits.globalScheduler
+import scala.collection.JavaConverters._
 
 import scala.concurrent.duration.Duration
 
@@ -73,9 +75,13 @@ object TestingServer extends App {
         case InMsg(ws, msg) =>
           read[ControlMsg](msg).cmd match {
             case ControlMsg.closeAll =>
-              global.scheduleOnce(Duration(500, TimeUnit.MILLISECONDS), {
+              globalScheduler.scheduleOnce(Duration(500, TimeUnit.MILLISECONDS), {
                 println(Console.CYAN + "STOPPING SERVER" + Console.RESET)
-                channel.server.stop()
+
+                val connections = channel.server.connections()
+                connections.synchronized {
+                  connections.asScala.toList.foreach(_.close(CloseFrame.GOING_AWAY))
+                }
               })
         }
         case _ =>
