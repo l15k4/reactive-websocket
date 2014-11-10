@@ -24,8 +24,7 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
                 out: SubjectChannel[OutMsg,OutMsg] // us calling browser
               )
 
-  protected var channels = init()
-  //             ^ the only mutable state initialized on client start and reinitialized on WebSocket error
+  protected val channels = init()
 
   /**
    * @param msg serialized JSON message to be sent out``
@@ -64,7 +63,8 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
    * @note that traffic of all 3 Observables is being logged (dump/dumpJson) until a stable release
    */
   private def init(): Channels = {
-    val ws = new WebSocket(url.stringify)
+    var ws = new WebSocket(url.stringify)
+
     val outgoingChannel = PublishChannel[OutMsg](BufferPolicy.BackPressured(2))
     val connectableOutput = outgoingChannel.publish()
     outgoingChannel.subscribe {
@@ -84,14 +84,9 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
         send(msg.text)
     }
 
+    val lifecycleSubject = ReplaySubject[Event[WebSocket]]
     val incomingChannel = PublishChannel[InMsg[WebSocket]](BufferPolicy.BackPressured(5))
     val connectableInput = incomingChannel.publish()
-    ws.onmessage = (x: MessageEvent) => incomingChannel.pushNext(InMsg(ws, x.data.toString))
-
-    val lifecycleSubject = ReplaySubject[Event[WebSocket]]
-    ws.onopen = (x: dom.Event) => lifecycleSubject.onNext(OnOpen(ws))
-    ws.onclose = (x: CloseEvent) => lifecycleSubject.onNext(OnClose(ws, x.code, x.reason, x.wasClean))
-    ws.onerror = (x: ErrorEvent) => lifecycleSubject.onNext(OnError(ws, new Exception(x.message)))
 
     lifecycleSubject.subscribe(
       new Observer[Event[WebSocket]] {
@@ -107,20 +102,26 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
             connectableOutput.connect()
             Continue
           case oc @ OnClose(_, code, reason, clean) =>
-            outgoingChannel.pushComplete()
-            incomingChannel.pushComplete()
-            Cancel
+            Continue // we don't care about Close, stop() is a proper way of shutting this down
           case er @ OnError(_, ex) =>
-            outgoingChannel.pushError(ex)
-            incomingChannel.pushError(ex)
-            channels = init()
-            Cancel
+            println(ex)
+            println("reconnecting websocket")
+            ws = new WebSocket(url.stringify)
+            listen(ws, lifecycleSubject, incomingChannel)
+            Continue
           case x => throw new IllegalStateException("Lifecycle yields : " + x)
         }
       }
     )
-
+    listen(ws, lifecycleSubject, incomingChannel)
     Channels(lifecycleSubject, incomingChannel, outgoingChannel)
+  }
+
+  def listen(ws: WebSocket, lc: Subject[Event[WebSocket], Event[WebSocket]], in: SubjectChannel[InMsg[WebSocket],InMsg[WebSocket]]): Unit = {
+    ws.onmessage = (x: MessageEvent) => in.pushNext(InMsg(ws, x.data.toString))
+    ws.onopen = (x: dom.Event) => lc.onNext(OnOpen(ws))
+    ws.onclose = (x: CloseEvent) => lc.onNext(OnClose(ws, x.code, x.reason, x.wasClean))
+    ws.onerror = (x: ErrorEvent) => lc.onNext(OnError(ws, new Exception(x.message)))
   }
 
   implicit class ObservableExtensions[T <: Msg](obs: Observable[T]) {
