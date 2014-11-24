@@ -11,9 +11,9 @@ object Build extends sbt.Build {
 
   val sharedSettings =
     Seq(
-      organization := "com.viagraphs.websocket",
+      organization := "com.viagraphs.reactive-websocket",
       version := "0.0.1-SNAPSHOT",
-      scalaVersion := "2.11.0",
+      scalaVersion := "2.11.2",
       traceLevel := 0,
       resolvers += Resolver.mavenLocal,
       parallelExecution in Test := false,
@@ -58,7 +58,8 @@ object Build extends sbt.Build {
         test in Test := (test in(Test, fastOptStage)).dependsOn(startTestServer in Project("jvm", file("jvm"))).value
       )
 
-  lazy val root =
-    project.in(file("."))
+
+  lazy val `reactive-websocket` =
+    project.in(file(".")).settings(scalaVersion := "2.11.2")
       .aggregate(jvm, js)
 }

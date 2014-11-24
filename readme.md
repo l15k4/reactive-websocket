@@ -1,7 +1,10 @@
 reactive-websocket
 ================
 
-NOTE: This project is still waiting on accepting a pull request in [java-websocket][2], it'll work with my fork of it only
+NOTE: 
+* This project is still waiting on accepting a pull request in [java-websocket][2], it'll work with my fork of it only
+* It also depends on my PR to [utest](https://github.com/lihaoyi/utest/pull/40) and you'd have to use [my branch](https://github.com/l15k4/utest/tree/scala-js-0.6.0-SNAPSHOT)
+* It depends on cutting edge scala-js 0.6.0-SNAPSHOT that you'd need to build together with all reactive-websocket's dependencies
 
 **Super light websocket server and browser client based on Rx**
 

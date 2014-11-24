@@ -9,8 +9,7 @@ import monifu.reactive._
 import org.scalajs.dom
 import org.scalajs.dom.{CloseEvent, ErrorEvent, MessageEvent, WebSocket}
 
-import scala.annotation.tailrec
-import scala.concurrent.Future
+import scala.concurrent.{Promise, Future}
 import scala.scalajs.js.JSON._
 
 /**
@@ -66,26 +65,36 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
     var ws = new WebSocket(url.stringify)
 
     val outgoingChannel = PublishChannel[OutMsg](BufferPolicy.BackPressured(2))
-    val connectableOutput = outgoingChannel.publish()
-    outgoingChannel.subscribe {
-      msg =>
-        @tailrec def send(m: String, attempt: Int = 0): Future[Ack] = ws.readyState match {
-          case WebSocket.CLOSING => Cancel
-          case WebSocket.CLOSED => Cancel
-          case WebSocket.OPEN =>
-            ws.send(msg.text)
-            Continue
-          case WebSocket.CONNECTING =>
-            if (attempt < 15)
-              send(m, attempt + 1)
-            else
-              Cancel
-        }
-        send(msg.text)
-    }
-
     val lifecycleSubject = ReplaySubject[Event[WebSocket]]
     val incomingChannel = PublishChannel[InMsg[WebSocket]](BufferPolicy.BackPressured(5))
+    val connectableOutput = outgoingChannel.publish()
+    outgoingChannel.subscribe { msg =>
+        val promise = Promise[Ack]()
+        def send(m: String, attempt: Int = 0): Unit = ws.readyState match {
+          case WebSocket.CLOSING =>
+            promise.completeWith(Cancel)
+          case WebSocket.CLOSED =>
+            if (attempt < 10) {
+              ws = new WebSocket(url.stringify)
+              listen(ws, lifecycleSubject, incomingChannel)
+              dom.window.setTimeout(() => send(m, attempt + 1), 500)
+            } else {
+              promise.completeWith(Cancel)
+            }
+          case WebSocket.OPEN =>
+            ws.send(msg.text)
+            promise.completeWith(Continue)
+          case WebSocket.CONNECTING =>
+            if (attempt < 10) {
+              dom.window.setTimeout(() => send(m, attempt + 1), 500)
+            } else {
+              promise.completeWith(Cancel)
+            }
+        }
+        send(msg.text)
+      promise.future
+    }
+
     val connectableInput = incomingChannel.publish()
 
     lifecycleSubject.subscribe(
