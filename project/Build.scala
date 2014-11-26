@@ -12,11 +12,9 @@ object Build extends sbt.Build {
   val sharedSettings =
     Seq(
       organization := "com.viagraphs.reactive-websocket",
-      version := "0.0.1-SNAPSHOT",
+      version := "0.0.1",
       scalaVersion := "2.11.2",
-      traceLevel := 0,
       resolvers += Resolver.mavenLocal,
-      parallelExecution in Test := false,
       unmanagedSourceDirectories in Compile <+= baseDirectory(_ /  "shared" / "main" / "scala"),
       unmanagedSourceDirectories in Test <+= baseDirectory(_ / "shared" / "test" / "scala")
     )
@@ -30,9 +28,9 @@ object Build extends sbt.Build {
       .settings(Revolver.settings: _*)
       .settings(
         libraryDependencies ++= Seq(
-          "org.monifu" %% "monifu-rx" % "0.14.1",
+          "org.monifu" %% "monifu" % "0.14.1",
           "org.java-websocket" % "Java-WebSocket" % "1.3.1-SNAPSHOT",
-          "com.lihaoyi" %% "upickle" % "0.2.4" % "test"
+          "com.lihaoyi" %% "upickle" % "0.2.6-SNAPSHOT" % "test"
         ),
         fullClasspath in Revolver.reStart := (fullClasspath in Test).value,
         mainClass in Revolver.reStart := Option("com.viagraphs.websocket.TestingServer"),
@@ -51,10 +49,11 @@ object Build extends sbt.Build {
         libraryDependencies ++= Seq(
           "org.scala-lang.modules.scalajs" %%% "scalajs-dom" % "0.7-SNAPSHOT",
           "org.monifu" %%% "monifu-rx-js" % "0.14.1",
-          // "org.scala-lang.modules.scalajs" %% "scalajs-jasmine-test-framework" % scalaJSVersion % "test"
-          "com.lihaoyi" %%% "utest" % "0.2.5-SNAPSHOT" % "test"
+          "com.lihaoyi" %%% "utest" % "0.2.6-SNAPSHOT" % "test",
+          "com.lihaoyi" %%% "upickle" % "0.2.6-SNAPSHOT" % "test"
         ),
         requiresDOM := true,
+        postLinkJSEnv in Test := new PhantomJSEnv(autoExit = false),
         test in Test := (test in(Test, fastOptStage)).dependsOn(startTestServer in Project("jvm", file("jvm"))).value
       )
 

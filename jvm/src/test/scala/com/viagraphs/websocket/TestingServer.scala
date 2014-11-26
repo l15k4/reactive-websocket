@@ -19,17 +19,16 @@ import scala.concurrent.duration.Duration
   */
 object TestingServer extends App {
 
-  def getThreadIdAsJson(endpoint: String): String = s"""{"$endpoint" : ${Thread.currentThread().getId}}"""
-
   val fallbackHandler = new FallbackHandler {
     override def handle(channel: HandlerChannels): Unit = {
       channel.in
         .dump(Endpoint.fallback + "Handler")
         .foreach {
         case InMsg(ws, msg) =>
-          val endpoint = read[TestMsg](msg).endpoint
-          assert(endpoint == Endpoint.fallback, Endpoint.fallback + " handler does not accept message from endpoint : " + endpoint)
-          ws.send(getThreadIdAsJson(endpoint))
+          val testMsg = read[TestMsg](msg)
+          assert(testMsg.endpoint == Endpoint.fallback, Endpoint.fallback + " handler does not accept message from endpoint : " + testMsg.endpoint)
+          val response = write[TestMsg](testMsg.copy(threadId = Thread.currentThread().getId.toString))
+          ws.send(response)
         case _ =>
       }
     }
@@ -44,9 +43,10 @@ object TestingServer extends App {
         .dump(Endpoint.chat + "Handler")
         .foreach {
         case InMsg(ws, msg) =>
-          val endpoint = read[TestMsg](msg).endpoint
-          assert(endpoint == Endpoint.chat, Endpoint.chat + " handler does not accept message from endpoint : " + endpoint)
-          ws.send(getThreadIdAsJson(endpoint))
+          val testMsg = read[TestMsg](msg)
+          assert(testMsg.endpoint == Endpoint.chat, Endpoint.chat + " handler does not accept message from endpoint : " + testMsg.endpoint)
+          val response = write[TestMsg](testMsg.copy(threadId = Thread.currentThread().getId.toString))
+          ws.send(response)
         case _ =>
       }
     }
@@ -58,9 +58,10 @@ object TestingServer extends App {
         .dump(Endpoint.admin + "Handler")
         .foreach {
         case InMsg(ws, msg) =>
-          val endpoint = read[TestMsg](msg).endpoint
-          assert(endpoint == Endpoint.admin, Endpoint.admin + " handler does not accept message from endpoint : " + endpoint)
-          ws.send(getThreadIdAsJson(endpoint))
+          val testMsg = read[TestMsg](msg)
+          assert(testMsg.endpoint == Endpoint.admin, Endpoint.admin + " handler does not accept message from endpoint : " + testMsg.endpoint)
+          val response = write[TestMsg](testMsg.copy(threadId = Thread.currentThread().getId.toString))
+          ws.send(response)
         case _ =>
       }
     }

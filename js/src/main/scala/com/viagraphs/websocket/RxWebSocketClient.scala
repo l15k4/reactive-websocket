@@ -2,14 +2,14 @@ package com.viagraphs.websocket
 
 import monifu.concurrent.Scheduler
 import monifu.reactive.Ack.{Cancel, Continue}
+import monifu.reactive._
 import monifu.reactive.channels.{PublishChannel, SubjectChannel}
 import monifu.reactive.internals.FutureAckExtensions
-import monifu.reactive.subjects.{ReplaySubject, PublishSubject}
-import monifu.reactive._
+import monifu.reactive.subjects.ReplaySubject
 import org.scalajs.dom
 import org.scalajs.dom.{CloseEvent, ErrorEvent, MessageEvent, WebSocket}
 
-import scala.concurrent.{Promise, Future}
+import scala.concurrent.{Future, Promise}
 import scala.scalajs.js.JSON._
 
 /**
@@ -67,7 +67,6 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
     val outgoingChannel = PublishChannel[OutMsg](BufferPolicy.BackPressured(2))
     val lifecycleSubject = ReplaySubject[Event[WebSocket]]
     val incomingChannel = PublishChannel[InMsg[WebSocket]](BufferPolicy.BackPressured(5))
-    val connectableOutput = outgoingChannel.publish()
     outgoingChannel.subscribe { msg =>
         val promise = Promise[Ack]()
         def send(m: String, attempt: Int = 0): Unit = ws.readyState match {
@@ -95,12 +94,14 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
       promise.future
     }
 
+    val connectableOutput = outgoingChannel.publish()
     val connectableInput = incomingChannel.publish()
 
     lifecycleSubject.subscribe(
       new Observer[Event[WebSocket]] {
         def onError(ex: Throwable): Unit = scheduler.reportFailure(ex)
         def onComplete(): Unit = {
+          println("Connection completed locally")
           outgoingChannel.pushComplete()
           incomingChannel.pushComplete()
         }
@@ -111,6 +112,9 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
             connectableOutput.connect()
             Continue
           case oc @ OnClose(_, code, reason, clean) =>
+            println("Connection completed remotely")
+            outgoingChannel.pushComplete()
+            incomingChannel.pushComplete()
             Continue // we don't care about Close, stop() is a proper way of shutting this down
           case er @ OnError(_, ex) =>
             println(ex)

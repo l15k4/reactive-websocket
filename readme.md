@@ -3,8 +3,7 @@ reactive-websocket
 
 NOTE: 
 * This project is still waiting on accepting a pull request in [java-websocket][2], it'll work with my fork of it only
-* It also depends on my PR to [utest](https://github.com/lihaoyi/utest/pull/40) and you'd have to use [my branch](https://github.com/l15k4/utest/tree/scala-js-0.6.0-SNAPSHOT)
-* It depends on cutting edge scala-js 0.6.0-SNAPSHOT that you'd need to build together with all reactive-websocket's dependencies
+* It also depends on my async test related PR to [utest](https://github.com/lihaoyi/utest/pull/40) and you'd have to use [my branch](https://github.com/l15k4/utest/tree/scala-js-0.6.0-SNAPSHOT) for testing
 
 **Super light websocket server and browser client based on Rx**
 
@@ -28,6 +27,10 @@ Client
 
 Client is designed exactly as server except it has no concept of handlers, just I/O - Observable/Observer. It uses [scala.js][1] to compile to javascript. There is a potential for creating client jvm implementation, however I don't think I'm going to need it.
 
+
+USAGE:
+
+Please see WebSocketClientSuite and TestingServer for inspiration
 
   [1]: http://www.scala-js.org/
   [2]: https://github.com/TooTallNate/Java-WebSocket

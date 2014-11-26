@@ -2,9 +2,9 @@ package com.viagraphs
 
 package object websocket {
 
-  case class ControlMsg(cmd: String)
-  case class TestMsg(endpoint: String, count: Int)
+  case class TestMsg(endpoint: String, count: Int, threadId: String)
 
+  case class ControlMsg(cmd: String)
   object ControlMsg {
     val closeAll = "closeAll"
   }
