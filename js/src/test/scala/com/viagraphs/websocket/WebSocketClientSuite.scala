@@ -1,6 +1,6 @@
 package com.viagraphs.websocket
 
-import monifu.concurrent.Implicits.globalScheduler
+import monifu.concurrent.Scheduler
 import monifu.reactive.Observable
 import upickle._
 import utest._
@@ -19,17 +19,17 @@ import scala.scalajs.js.JSON.stringify
  *
  * @see [[com.viagraphs.websocket.TestingServer]]
  */
-object WebSocketClientSuite extends TestSuites {
+object WebSocketClientSuite extends TestSuite {
 
   // org.scalajs.dom.window.setTimeout(() => System.exit(0), 5000) // manual shutdown
-
+  implicit val scheduler = Scheduler.trampoline()
   val controller = RxWebSocketClient(Url(WS, "localhost", 8001, Option(Endpoint.controller)))
 
-  val integrationTests = TestSuite {
+  val tests = TestSuite {
 
     "shared server handler instances"-{
 
-      Observable.from(List(Endpoint.chat, Endpoint.chat, Endpoint.chat, Endpoint.admin, Endpoint.admin, Endpoint.fallback, Endpoint.controller))
+      Observable.fromIterable(List(Endpoint.chat, Endpoint.chat, Endpoint.chat, Endpoint.admin, Endpoint.admin, Endpoint.fallback, Endpoint.controller))
         .mergeMap {
           case Endpoint.controller =>
             controller.sendAndReceive(OutMsg(stringify(literal("cmd" -> ControlMsg.closeAll))))
