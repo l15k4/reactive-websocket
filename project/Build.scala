@@ -2,18 +2,17 @@ import sbt.Keys._
 import sbt._
 import spray.revolver.RevolverPlugin._
 
-import scala.scalajs.sbtplugin.ScalaJSPlugin.ScalaJSKeys._
-import scala.scalajs.sbtplugin.ScalaJSPlugin._
-import scala.scalajs.sbtplugin.env.phantomjs.PhantomJSEnv
-import utest.jsrunner.Plugin.internal.utestJsSettings
+import org.scalajs.sbtplugin.ScalaJSPlugin
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
+import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport.PhantomJSEnv
 
 object Build extends sbt.Build {
 
   val sharedSettings =
     Seq(
       organization := "com.viagraphs.reactive-websocket",
-      version := "0.0.1",
-      scalaVersion := "2.11.2",
+      version := "0.0.2-SNAPSHOT",
+      scalaVersion := "2.11.4",
       resolvers += Resolver.mavenLocal,
       unmanagedSourceDirectories in Compile <+= baseDirectory(_ /  "shared" / "main" / "scala"),
       unmanagedSourceDirectories in Test <+= baseDirectory(_ / "shared" / "test" / "scala")
@@ -28,9 +27,9 @@ object Build extends sbt.Build {
       .settings(Revolver.settings: _*)
       .settings(
         libraryDependencies ++= Seq(
-          "org.monifu" %% "monifu" % "0.14.1",
+          "org.monifu" %% "monifu" % "0.1-SNAPSHOT",
           "org.java-websocket" % "Java-WebSocket" % "1.3.1-SNAPSHOT",
-          "com.lihaoyi" %% "upickle" % "0.2.6-SNAPSHOT" % "test"
+          "com.lihaoyi" %% "upickle" % "0.2.6-M3" % "test"
         ),
         fullClasspath in Revolver.reStart := (fullClasspath in Test).value,
         mainClass in Revolver.reStart := Option("com.viagraphs.websocket.TestingServer"),
@@ -41,24 +40,24 @@ object Build extends sbt.Build {
 
   lazy val js =
     project.in(file("js"))
+      .enablePlugins(ScalaJSPlugin)
       .settings(sharedSettings: _*)
       .settings(name := "client")
-      .settings(scalaJSSettings: _*)
-      .settings(utestJsSettings: _*)
       .settings(
         libraryDependencies ++= Seq(
-          "org.scala-lang.modules.scalajs" %%% "scalajs-dom" % "0.7-SNAPSHOT",
-          "org.monifu" %%% "monifu-rx-js" % "0.14.1",
-          "com.lihaoyi" %%% "utest" % "0.2.6-SNAPSHOT" % "test",
-          "com.lihaoyi" %%% "upickle" % "0.2.6-SNAPSHOT" % "test"
+          "org.scala-js" %%% "scalajs-dom" % "0.7.1-SNAPSHOT",
+          "org.monifu" %%% "monifu" % "0.1-SNAPSHOT",
+          "com.lihaoyi" %%% "utest" % "0.2.5-M3-SNAPSHOT" % "test",
+          "com.lihaoyi" %%% "upickle" % "0.2.6-M3" % "test"
         ),
+        scalaJSStage := FastOptStage,
+        testFrameworks += new TestFramework("utest.runner.Framework"),
         requiresDOM := true,
-        postLinkJSEnv in Test := new PhantomJSEnv(autoExit = false),
-        test in Test := (test in(Test, fastOptStage)).dependsOn(startTestServer in Project("jvm", file("jvm"))).value
+        test in Test := (test in Test).dependsOn(startTestServer in Project("jvm", file("jvm"))).value
       )
 
 
   lazy val `reactive-websocket` =
-    project.in(file(".")).settings(scalaVersion := "2.11.2")
+    project.in(file(".")).settings(scalaVersion := "2.11.4")
       .aggregate(jvm, js)
 }

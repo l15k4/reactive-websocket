@@ -65,29 +65,29 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
     var ws = new WebSocket(url.stringify)
 
     val outgoingChannel = PublishChannel[OutMsg](BufferPolicy.BackPressured(2))
-    val lifecycleSubject = ReplaySubject[Event[WebSocket]]
-    val incomingChannel = PublishChannel[InMsg[WebSocket]](BufferPolicy.BackPressured(5))
+    val lifecycleSubject = ReplaySubject[Event[WebSocket]]()
+    val incomingChannel = PublishChannel[InMsg[WebSocket]](BufferPolicy.BackPressured(2))
     outgoingChannel.subscribe { msg =>
         val promise = Promise[Ack]()
         def send(m: String, attempt: Int = 0): Unit = ws.readyState match {
           case WebSocket.CLOSING =>
-            promise.completeWith(Cancel)
+            promise.tryCompleteWith(Cancel)
           case WebSocket.CLOSED =>
             if (attempt < 10) {
               ws = new WebSocket(url.stringify)
               listen(ws, lifecycleSubject, incomingChannel)
               dom.window.setTimeout(() => send(m, attempt + 1), 500)
             } else {
-              promise.completeWith(Cancel)
+              promise.tryCompleteWith(Cancel)
             }
           case WebSocket.OPEN =>
             ws.send(msg.text)
-            promise.completeWith(Continue)
+            promise.tryCompleteWith(Continue)
           case WebSocket.CONNECTING =>
             if (attempt < 10) {
               dom.window.setTimeout(() => send(m, attempt + 1), 500)
             } else {
-              promise.completeWith(Cancel)
+              promise.tryCompleteWith(Cancel)
             }
         }
         send(msg.text)
@@ -108,8 +108,8 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
 
         def onNext(e: Event[WebSocket]): Future[Ack] = e match {
           case OnOpen(_) =>
-            connectableInput.connect()
-            connectableOutput.connect()
+            connectableInput.connect
+            connectableOutput.connect
             Continue
           case oc @ OnClose(_, code, reason, clean) =>
             println("Connection completed remotely")
@@ -141,7 +141,8 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
 
     def dumpJson(prefix: String, color: String = Console.YELLOW): Observable[T] = {
       def <--> =  color + prefix + Console.RESET
-      Observable.create { observer =>
+      Observable.create { subscriber =>
+        val observer = subscriber.observer
         obs.unsafeSubscribe(
           new Observer[T] {
             private[this] var pos = 0

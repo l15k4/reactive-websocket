@@ -76,8 +76,8 @@ class RxWebSocketServer(fbHandler: FallbackHandler, epHandlers: List[EndpointHan
         }
         ws.workerThread.put(ws)
         // the only place we can get notified Server booted up successfully
-        connectableInput.connect()
-        connectableOutput.connect()
+        connectableInput.connect
+        connectableOutput.connect
       }
 
       def onError(ws: WebSocket, ex: Exception): Unit = { // this is a fatal server error
