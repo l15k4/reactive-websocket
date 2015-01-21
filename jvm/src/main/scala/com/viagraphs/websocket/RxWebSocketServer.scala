@@ -70,7 +70,7 @@ class RxWebSocketServer(fbHandler: FallbackHandler, epHandlers: List[EndpointHan
       /** A little WebSocketServer hack that allows for having a dedicated worker thread for a shared handler instance */
       val endpointWorkers = epHandlers.map(_.resourceDescriptor -> new WebSocketWorker).toMap
       endpointWorkers.foreach(_._2.start())
-      override protected def queue(ws: WebSocketImpl) {
+      override protected def queue(ws: WebSocketImpl): Unit = {
         if (ws.workerThread == null) {
           ws.workerThread = endpointWorkers.getOrElse(ws.getResourceDescriptor, decoders.iterator().next())
         }
@@ -154,7 +154,7 @@ case class Channels(server: WebSocketServer, in: Channel[Event[WebSocket]], out:
 
 
 trait Handler {
-  def handle(channel: HandlerChannels)
+  def handle(channel: HandlerChannels): Unit
 }
 
 abstract class EndpointHandler(val endpoint: String) extends Handler {

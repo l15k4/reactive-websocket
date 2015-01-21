@@ -15,7 +15,12 @@ object Build extends sbt.Build {
       resolvers += Resolver.mavenLocal,
       unmanagedSourceDirectories in Compile <+= baseDirectory(_ /  "shared" / "main" / "scala"),
       unmanagedSourceDirectories in Test <+= baseDirectory(_ / "shared" / "test" / "scala"),
-
+      scalacOptions ++= Seq(
+        "-unchecked", "-deprecation", "-feature", "-Xfatal-warnings",
+        "-Xlint", "-Xfuture",
+        "-Yinline-warnings", "-Ywarn-adapted-args", "-Ywarn-inaccessible",
+        "-Ywarn-nullary-override", "-Ywarn-nullary-unit", "-Yno-adapted-args"
+      ),
       publishMavenStyle := true,
       publishArtifact in Test := false,
       pomIncludeRepository := { _ => false },
