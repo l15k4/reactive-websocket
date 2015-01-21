@@ -14,7 +14,38 @@ object Build extends sbt.Build {
       scalaVersion := "2.11.5",
       resolvers += Resolver.mavenLocal,
       unmanagedSourceDirectories in Compile <+= baseDirectory(_ /  "shared" / "main" / "scala"),
-      unmanagedSourceDirectories in Test <+= baseDirectory(_ / "shared" / "test" / "scala")
+      unmanagedSourceDirectories in Test <+= baseDirectory(_ / "shared" / "test" / "scala"),
+
+      publishMavenStyle := true,
+      publishArtifact in Test := false,
+      pomIncludeRepository := { _ => false },
+      publishTo := {
+        val nexus = "https://oss.sonatype.org/"
+        if (isSnapshot.value)
+          Some("snapshots" at nexus + "content/repositories/snapshots")
+        else
+          Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+      },
+      pomExtra :=
+        <url>https://github.com/viagraphs/reactive-websocket</url>
+          <licenses>
+            <license>
+              <name>The MIT License (MIT)</name>
+              <url>http://opensource.org/licenses/MIT</url>
+              <distribution>repo</distribution>
+            </license>
+          </licenses>
+          <scm>
+            <url>git@github.com:viagraphs/reactive-websocket.git</url>
+            <connection>scm:git:git@github.com:viagraphs/reactive-websocket.git</connection>
+          </scm>
+          <developers>
+            <developer>
+              <id>l15k4</id>
+              <name>Jakub Liska</name>
+              <email>liska.jakub@gmail.com</email>
+            </developer>
+          </developers>
     )
 
   lazy val startTestServer = taskKey[Unit]("For scalaJS test suite")
@@ -57,6 +88,12 @@ object Build extends sbt.Build {
 
 
   lazy val `reactive-websocket` =
-    project.in(file(".")).settings(scalaVersion := "2.11.5")
-      .aggregate(jvm, js)
+    project.in(file(".")).aggregate(jvm, js)
+      .settings(
+        scalaVersion := "2.11.5",
+        publishArtifact := false,
+        publishArtifact in (Compile, packageDoc) := false,
+        publishArtifact in (Compile, packageSrc) := false,
+        publishArtifact in (Compile, packageBin) := false
+      )
 }
