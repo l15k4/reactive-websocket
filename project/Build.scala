@@ -4,15 +4,14 @@ import spray.revolver.RevolverPlugin._
 
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
-import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport.PhantomJSEnv
 
 object Build extends sbt.Build {
 
   val sharedSettings =
     Seq(
-      organization := "com.viagraphs.reactive-websocket",
+      organization := "com.viagraphs",
       version := "0.0.2-SNAPSHOT",
-      scalaVersion := "2.11.4",
+      scalaVersion := "2.11.5",
       resolvers += Resolver.mavenLocal,
       unmanagedSourceDirectories in Compile <+= baseDirectory(_ /  "shared" / "main" / "scala"),
       unmanagedSourceDirectories in Test <+= baseDirectory(_ / "shared" / "test" / "scala")
@@ -23,7 +22,7 @@ object Build extends sbt.Build {
   lazy val jvm =
     project.in(file("jvm"))
       .settings(sharedSettings: _*)
-      .settings(name := "server")
+      .settings(name := "reactive-websocket-server")
       .settings(Revolver.settings: _*)
       .settings(
         libraryDependencies ++= Seq(
@@ -42,7 +41,7 @@ object Build extends sbt.Build {
     project.in(file("js"))
       .enablePlugins(ScalaJSPlugin)
       .settings(sharedSettings: _*)
-      .settings(name := "client")
+      .settings(name := "reactive-websocket-client")
       .settings(
         libraryDependencies ++= Seq(
           "org.scala-js" %%% "scalajs-dom" % "0.7.1-SNAPSHOT",
@@ -58,6 +57,6 @@ object Build extends sbt.Build {
 
 
   lazy val `reactive-websocket` =
-    project.in(file(".")).settings(scalaVersion := "2.11.4")
+    project.in(file(".")).settings(scalaVersion := "2.11.5")
       .aggregate(jvm, js)
 }
