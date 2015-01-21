@@ -29,7 +29,7 @@ object Build extends sbt.Build {
         libraryDependencies ++= Seq(
           "org.monifu" %% "monifu" % "0.1-SNAPSHOT",
           "org.java-websocket" % "Java-WebSocket" % "1.3.1-SNAPSHOT",
-          "com.lihaoyi" %% "upickle" % "0.2.6-M3" % "test"
+          "com.lihaoyi" %% "upickle" % "0.2.6-RC1" % "test"
         ),
         fullClasspath in Revolver.reStart := (fullClasspath in Test).value,
         mainClass in Revolver.reStart := Option("com.viagraphs.websocket.TestingServer"),
@@ -47,8 +47,8 @@ object Build extends sbt.Build {
         libraryDependencies ++= Seq(
           "org.scala-js" %%% "scalajs-dom" % "0.7.1-SNAPSHOT",
           "org.monifu" %%% "monifu" % "0.1-SNAPSHOT",
-          "com.lihaoyi" %%% "utest" % "0.2.5-M3-SNAPSHOT" % "test",
-          "com.lihaoyi" %%% "upickle" % "0.2.6-M3" % "test"
+          "com.lihaoyi" %%% "utest" % "0.2.5-RC1" % "test",
+          "com.lihaoyi" %%% "upickle" % "0.2.6-RC1" % "test"
         ),
         scalaJSStage := FastOptStage,
         testFrameworks += new TestFramework("utest.runner.Framework"),

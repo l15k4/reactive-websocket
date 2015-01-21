@@ -3,7 +3,7 @@ reactive-websocket
 
 NOTE: 
 * This project is still waiting on accepting a pull request in [java-websocket][2], it'll work with my fork of it only
-* It also depends on my async test related PR to [utest](https://github.com/lihaoyi/utest/pull/40)
+* It hasn't been released yet until scala.js 0.6.0 is out
 
 **Super light websocket server and browser client based on Rx**
 
