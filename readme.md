@@ -1,6 +1,8 @@
 reactive-websocket
 ================
 
+[![Build Status](https://travis-ci.org/viagraphs/reactive-websocket.svg)](https://travis-ci.org/viagraphs/reactive-websocket)
+
 NOTE: 
 * This project is still waiting on accepting a pull request in [java-websocket][2], it'll work with my fork of it only
 * It hasn't been released yet until scala.js 0.6.0 is out
