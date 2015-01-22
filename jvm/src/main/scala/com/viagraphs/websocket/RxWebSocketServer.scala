@@ -96,7 +96,7 @@ class RxWebSocketServer(fbHandler: FallbackHandler, epHandlers: List[EndpointHan
       def onClose(ws: WebSocket, code: Int, reason: String, remote: Boolean): Unit = incomingChannel.pushNext(OnClose(ws, code, reason, remote))
     }
 
-    /** Each handler is interested only in connections coming to particular rest endpoint */
+    /* Each handler is interested only in connections coming to particular rest endpoint */
     val endpointNames = epHandlers.map(_.resourceDescriptor).toSet
     epHandlers.foreach(
       h => h.handle(
@@ -108,7 +108,7 @@ class RxWebSocketServer(fbHandler: FallbackHandler, epHandlers: List[EndpointHan
       )
     )
 
-    /** Fallback handler is interested in all connections that don't match any of declared rest endpoint */
+    /* Fallback handler is interested in all connections that don't match any of declared rest endpoint */
     fbHandler.handle(
       HandlerChannels(
         server,
@@ -117,7 +117,7 @@ class RxWebSocketServer(fbHandler: FallbackHandler, epHandlers: List[EndpointHan
       )
     )
 
-    /** Any handler can send a message to :
+     /* Any handler can send a message to :
       *  - all server's connections
       *  - connections coming to a specific rest endpoint
       *  - arbitrary group of connections
