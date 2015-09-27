@@ -4,14 +4,13 @@
 [![Build Status](https://travis-ci.org/viagraphs/reactive-websocket.svg)](https://travis-ci.org/viagraphs/reactive-websocket)
 
 * dependencies 
-    * server : `"com.viagraphs" %%% "reactive-websocket-server" % "0.0.2-SNAPSHOT"`
-    * client : `"com.viagraphs" %%% "reactive-websocket-client" % "0.0.2-SNAPSHOT"`
-* Scala.js version : 0.6.0-RC1
+    * server : `"com.viagraphs" %%% "reactive-websocket-server" % "0.0.3-SNAPSHOT"`
+    * client : `"com.viagraphs" %%% "reactive-websocket-client" % "0.0.3-SNAPSHOT"`
+* Scala.js version : 0.6.5
 
 
 NOTE: 
 * This project is still waiting on accepting a pull request in [java-websocket][2], it'll work with my fork of it only
-* It hasn't been released yet until scala.js 0.6.0 is out
 
 **Light websocket server and browser client based on Rx principles**
 

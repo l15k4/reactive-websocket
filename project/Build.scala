@@ -10,8 +10,8 @@ object Build extends sbt.Build {
   val sharedSettings =
     Seq(
       organization := "com.viagraphs",
-      version := "0.0.2-SNAPSHOT",
-      scalaVersion := "2.11.5",
+      version := "0.0.3-SNAPSHOT",
+      scalaVersion := "2.11.7",
       resolvers += Resolver.mavenLocal,
       unmanagedSourceDirectories in Compile <+= baseDirectory(_ /  "shared" / "main" / "scala"),
       unmanagedSourceDirectories in Test <+= baseDirectory(_ / "shared" / "test" / "scala"),
@@ -62,9 +62,9 @@ object Build extends sbt.Build {
       .settings(Revolver.settings: _*)
       .settings(
         libraryDependencies ++= Seq(
-          "org.monifu" %% "monifu" % "0.1-SNAPSHOT",
+          "org.monifu" %% "monifu" % "1.0-RC3",
           "org.java-websocket" % "Java-WebSocket" % "1.3.1-SNAPSHOT",
-          "com.lihaoyi" %% "upickle" % "0.2.6-RC1" % "test"
+          "com.lihaoyi" %% "upickle" % "0.3.6" % "test"
         ),
         fullClasspath in Revolver.reStart := (fullClasspath in Test).value,
         mainClass in Revolver.reStart := Option("com.viagraphs.websocket.TestingServer"),
@@ -80,10 +80,10 @@ object Build extends sbt.Build {
       .settings(name := "reactive-websocket-client")
       .settings(
         libraryDependencies ++= Seq(
-          "org.scala-js" %%% "scalajs-dom" % "0.7.1-SNAPSHOT",
-          "org.monifu" %%% "monifu" % "0.1-SNAPSHOT",
-          "com.lihaoyi" %%% "utest" % "0.2.5-RC1" % "test",
-          "com.lihaoyi" %%% "upickle" % "0.2.6-RC1" % "test"
+          "org.scala-js" %%% "scalajs-dom" % "0.8.1",
+          "org.monifu" %%% "monifu" % "1.0-RC3",
+          "com.lihaoyi" %%% "utest" % "0.3.1" % "test",
+          "com.lihaoyi" %%% "upickle" % "0.3.6" % "test"
         ),
         scalaJSStage := FastOptStage,
         testFrameworks += new TestFramework("utest.runner.Framework"),
@@ -95,7 +95,7 @@ object Build extends sbt.Build {
   lazy val `reactive-websocket` =
     project.in(file(".")).aggregate(jvm, js)
       .settings(
-        scalaVersion := "2.11.5",
+        scalaVersion := "2.11.7",
         publishArtifact := false,
         publishArtifact in (Compile, packageDoc) := false,
         publishArtifact in (Compile, packageSrc) := false,
