@@ -2,7 +2,7 @@ package com.viagraphs.websocket
 
 import monifu.concurrent.Scheduler
 import monifu.reactive.Observable
-import upickle._
+import upickle.legacy._
 import utest._
 
 import scala.concurrent.Future

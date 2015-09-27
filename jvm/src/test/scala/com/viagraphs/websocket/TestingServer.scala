@@ -1,7 +1,7 @@
 package com.viagraphs.websocket
 
 import org.java_websocket.framing.CloseFrame
-import upickle._
+import upickle.legacy._
 import monifu.concurrent.Implicits.globalScheduler
 import scala.collection.JavaConverters._
 
