@@ -2,9 +2,9 @@ package com.viagraphs.websocket
 
 import monifu.concurrent.Scheduler
 import monifu.reactive.Ack.{Cancel, Continue}
+import monifu.reactive.OverflowStrategy.Fail
 import monifu.reactive._
 import monifu.reactive.channels.{PublishChannel, SubjectChannel}
-import monifu.reactive.internals.FutureAckExtensions
 import monifu.reactive.subjects.ReplaySubject
 import org.scalajs.dom
 import org.scalajs.dom.{CloseEvent, ErrorEvent, MessageEvent, WebSocket}
@@ -64,9 +64,9 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
   private def init(): Channels = {
     var ws = new WebSocket(url.stringify)
 
-    val outgoingChannel = PublishChannel[OutMsg](BufferPolicy.BackPressured(2))
+    val outgoingChannel = PublishChannel[OutMsg](Fail(1000))
     val lifecycleSubject = ReplaySubject[Event[WebSocket]]()
-    val incomingChannel = PublishChannel[InMsg[WebSocket]](BufferPolicy.BackPressured(2))
+    val incomingChannel = PublishChannel[InMsg[WebSocket]](Fail(1000))
     outgoingChannel.subscribe { msg =>
         val promise = Promise[Ack]()
         def send(m: String, attempt: Int = 0): Unit = ws.readyState match {
@@ -94,8 +94,8 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
       promise.future
     }
 
-    val connectableOutput = outgoingChannel.publish()
-    val connectableInput = incomingChannel.publish()
+    val connectableOutput = outgoingChannel.publish
+    val connectableInput = incomingChannel.publish
 
     lifecycleSubject.subscribe(
       new Observer[Event[WebSocket]] {
@@ -141,9 +141,8 @@ class RxWebSocketClient(val url: Url)(implicit scheduler: Scheduler) {
 
     def dumpJson(prefix: String, color: String = Console.YELLOW): Observable[T] = {
       def <--> =  color + prefix + Console.RESET
-      Observable.create { subscriber =>
-        val observer = subscriber.observer
-        obs.unsafeSubscribe(
+      Observable.create { observer =>
+        obs.subscribe(
           new Observer[T] {
             private[this] var pos = 0
 

@@ -1,13 +1,11 @@
 package com.viagraphs.websocket
 
-import java.util.concurrent.TimeUnit
-
 import org.java_websocket.framing.CloseFrame
 import upickle._
 import monifu.concurrent.Implicits.globalScheduler
 import scala.collection.JavaConverters._
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 
 
 /** Supposed to be started via 'startTestServer' task in 'jvm' project from 'js' project for running scalajs test suite
@@ -76,14 +74,14 @@ object TestingServer extends App {
         case InMsg(ws, msg) =>
           read[ControlMsg](msg).cmd match {
             case ControlMsg.closeAll =>
-              globalScheduler.scheduleOnce(Duration(500, TimeUnit.MILLISECONDS), {
+              globalScheduler.scheduleOnce(500.millis) {
                 println(Console.CYAN + "STOPPING SERVER" + Console.RESET)
 
                 val connections = channel.server.connections()
                 connections.synchronized {
                   connections.asScala.toList.foreach(_.close(CloseFrame.GOING_AWAY))
                 }
-              })
+              }
         }
         case _ =>
       }

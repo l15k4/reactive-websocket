@@ -5,6 +5,7 @@ import java.util
 
 import monifu.concurrent.Implicits.globalScheduler
 import monifu.reactive.Ack.Continue
+import monifu.reactive.OverflowStrategy.Fail
 import monifu.reactive._
 import monifu.reactive.channels.PublishChannel
 import org.java_websocket.drafts.Draft
@@ -59,11 +60,11 @@ class RxWebSocketServer(fbHandler: FallbackHandler, epHandlers: List[EndpointHan
 
 
   def init(): Channels = {
-    val incomingChannel = PublishChannel[Event[WebSocket]](BufferPolicy.BackPressured(2))
-    val connectableInput = incomingChannel.publish()
+    val incomingChannel = PublishChannel[Event[WebSocket]](Fail(1000))
+    val connectableInput = incomingChannel.publish
 
-    val outgoingChannel = PublishChannel[Outgoing](BufferPolicy.BackPressured(2))
-    val connectableOutput = outgoingChannel.publish()
+    val outgoingChannel = PublishChannel[Outgoing](Fail(1000))
+    val connectableOutput = outgoingChannel.publish
 
     val server = new WebSocketServer(address, 1, drafts.asJava) {
 
@@ -76,8 +77,8 @@ class RxWebSocketServer(fbHandler: FallbackHandler, epHandlers: List[EndpointHan
         }
         ws.workerThread.put(ws)
         // the only place we can get notified Server booted up successfully
-        connectableInput.connect
-        connectableOutput.connect
+        connectableInput.connect()
+        connectableOutput.connect()
       }
 
       def onError(ws: WebSocket, ex: Exception): Unit = { // this is a fatal server error
