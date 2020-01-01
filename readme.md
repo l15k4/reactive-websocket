@@ -1,4 +1,4 @@
-##reactive-websocket (Legacy software - not maintained anymore due to many breaking changes in Monix and java-websocket)
+## reactive-websocket (Legacy software - not maintained anymore due to many breaking changes in Monix and java-websocket)
 
 
 [![Build Status](https://travis-ci.org/pragmaxim/reactive-websocket.svg)](https://travis-ci.org/pragmaxim/reactive-websocket)
@@ -17,7 +17,7 @@ NOTE:
 > - **Super light** - just [scala.js][1] for client, [java-websocket][2] for server, [monifu][3] for both and a few hundreds LOscalaC
 > - **based on RX** - events and I/O handled using Observables and Observers
 
-##Server
+### Server
 
 
 Server's advantage over other implementations is that it lets you create handler instance (multiple) shared among contextually related websocket connections. Each such a handler instance has a dedicated worker thread. This allows you to keep mutable state thread-safely within that handler instance. Other implementations usually force you to use a handler instance per websocket connection which leaves you with 4 options:
@@ -29,7 +29,7 @@ Server's advantage over other implementations is that it lets you create handler
 
 Imagine you are developing a single-page-app with chat, some collaboration tool and administration. This means having 3 dedicated handler instances and one fallback instance handling arbitrary websocket connections. 4 worker threads would be assigned to those 4 handlers. `Chat handler` would handle all chat connections and in that handler you could keep state about users and rooms thread-safely. In a classic handler-per-connection scenario you create a `Chat actor` that keeps mutable state and you resend events and messages to it.
 
-##Client
+### Client
 
 
 Client is designed exactly as server except it has no concept of handlers, just I/O - Observable/Observer. It uses [scala.js][1] to compile to javascript. There is a potential for creating client jvm implementation, however I don't think I'm going to need it.
