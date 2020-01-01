@@ -1,4 +1,6 @@
-## reactive-websocket (Legacy software - not maintained anymore due to many breaking changes in Monix and java-websocket)
+## reactive-websocket
+
+**(Legacy software - not maintained anymore due to many breaking changes in Monix and java-websocket)**
 
 
 [![Build Status](https://travis-ci.org/pragmaxim/reactive-websocket.svg)](https://travis-ci.org/pragmaxim/reactive-websocket)
