@@ -1,4 +1,4 @@
-package com.viagraphs.websocket
+package com.pragmaxim.websocket
 
 case class Url(protocol: Protocol, host: String, port: Int, path: Option[String]) {
   def stringify = s"${protocol.value()}://$host:$port/${path.getOrElse("")}"

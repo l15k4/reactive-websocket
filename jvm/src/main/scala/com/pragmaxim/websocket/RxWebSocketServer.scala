@@ -1,13 +1,12 @@
-package com.viagraphs.websocket
+package com.pragmaxim.websocket
 
 import java.net.InetSocketAddress
 import java.util
 
-import monifu.concurrent.Implicits.globalScheduler
-import monifu.reactive.Ack.Continue
-import monifu.reactive.OverflowStrategy.Fail
-import monifu.reactive._
-import monifu.reactive.channels.PublishChannel
+import monix.execution.Ack.Continue
+import monix.reactive.OverflowStrategy.Fail
+import monix.reactive._
+import monix.reactive.channels.PublishChannel
 import org.java_websocket.drafts.Draft
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer

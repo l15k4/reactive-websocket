@@ -1,10 +1,10 @@
-package com.viagraphs.websocket
+package com.pragmaxim.websocket
 
+import com.pragmaxim.websocket.{EndpointHandler, FallbackHandler, HandlerChannels, RxWebSocketServer}
 import org.java_websocket.framing.CloseFrame
 import upickle.legacy._
-import monifu.concurrent.Implicits.globalScheduler
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
 

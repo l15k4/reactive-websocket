@@ -1,4 +1,4 @@
-package com.viagraphs.websocket
+package websocket
 
 case class TestMsg(endpoint: String, count: Int, threadId: String)
 

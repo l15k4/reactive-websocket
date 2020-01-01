@@ -1,9 +1,10 @@
-package com.viagraphs.websocket
+package com.pragmaxim.websocket
 
-import monifu.concurrent.Scheduler
-import monifu.reactive.Observable
+import monix.execution.Scheduler
+import monix.reactive.Observable
 import upickle.legacy._
 import utest._
+import websocket.{ControlMsg, Endpoint, TestMsg}
 
 import scala.concurrent.Future
 import scala.scalajs.js.Dynamic.literal
@@ -17,7 +18,7 @@ import scala.scalajs.js.JSON.stringify
  * Overall, server uses three worker threads for chat, admin and fallback (anything else that doesn't match) rest endpoints
  * i.e. localhost/chat request is handled by chat handler,  localhost/controller is handler by fallback handler
  *
- * @see [[com.viagraphs.websocket.TestingServer]]
+ * @see [[com.pragmaxim.websocket.TestingServer]]
  */
 object WebSocketClientSuite extends TestSuite {
 

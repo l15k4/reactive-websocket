@@ -1,11 +1,12 @@
-package com.viagraphs.websocket
+package com.pragmaxim.websocket
 
-import monifu.concurrent.Scheduler
-import monifu.reactive.Ack.{Cancel, Continue}
-import monifu.reactive.OverflowStrategy.Fail
-import monifu.reactive._
-import monifu.reactive.channels.{PublishChannel, SubjectChannel}
-import monifu.reactive.subjects.ReplaySubject
+import com.pragmaxim.websocket.{Event, InMsg, Msg, OnClose, OnError, OnOpen, Outgoing, Url}
+import monix.execution.Scheduler
+import monix.execution.Ack.{Continue, Stop}
+import monix.reactive.OverflowStrategy.Fail
+import monix.reactive._
+import monix.reactive.channels.{PublishChannel, SubjectChannel}
+import monix.reactive.subjects.{ReplaySubject, Subject}
 import org.scalajs.dom
 import org.scalajs.dom.{CloseEvent, ErrorEvent, MessageEvent, WebSocket}
 

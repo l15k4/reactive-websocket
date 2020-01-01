@@ -1,8 +1,8 @@
-package com.viagraphs
+package com.pragmaxim
 
-import monifu.concurrent.Scheduler
-import monifu.reactive.Ack
-import monifu.reactive.Ack.{Cancel, Continue}
+import monix.execution.Scheduler
+import monix.execution.Ack
+import monix.execution.Ack.{Stop, Continue}
 
 import scala.concurrent.Future
 import scala.util.Failure
@@ -14,20 +14,20 @@ package object websocket {
   implicit class FuturePimp(val source: Future[Ack]) extends AnyVal {
     /**
      * Triggers execution of the given callback, once the source terminates either
-     * with a `Cancel` or with a failure.
+     * with a `Stop` or with a failure.
      */
     def onCancel(cb: => Unit)(implicit s: Scheduler): Future[Ack] =
       source match {
         case Continue => source
-        case Cancel =>
+        case Stop =>
           try cb catch {
             case NonFatal(ex) => s.reportFailure(ex)
           }
           source
         case sync if sync.isCompleted =>
           sync.value.get match {
-            case Continue.IsSuccess => source
-            case Cancel.IsSuccess | Failure(_) =>
+            case Continue.AsSuccess => source
+            case Stop.AsSuccess | Failure(_) =>
               try cb catch {
                 case NonFatal(ex) => s.reportFailure(ex)
               }
@@ -39,7 +39,7 @@ package object websocket {
           }
         case async =>
           source.onComplete {
-            case Cancel.IsSuccess | Failure(_) => cb
+            case Stop.AsSuccess | Failure(_) => cb
             case _ => // nothing
           }
           source

@@ -1,12 +1,12 @@
-#reactive-websocket
+##reactive-websocket (Legacy software - not maintained anymore due to many breaking changes in Monix and java-websocket)
 
 
-[![Build Status](https://travis-ci.org/viagraphs/reactive-websocket.svg)](https://travis-ci.org/viagraphs/reactive-websocket)
+[![Build Status](https://travis-ci.org/pragmaxim/reactive-websocket.svg)](https://travis-ci.org/pragmaxim/reactive-websocket)
 
 * dependencies 
-    * server : `"com.viagraphs" %%% "reactive-websocket-server" % "0.0.3-SNAPSHOT"`
-    * client : `"com.viagraphs" %%% "reactive-websocket-client" % "0.0.3-SNAPSHOT"`
-* Scala.js version : 0.6.5
+    * server : `"com.pragmaxim" %%% "reactive-websocket-server" % "0.0.4-SNAPSHOT"`
+    * client : `"com.pragmaxim" %%% "reactive-websocket-client" % "0.0.4-SNAPSHOT"`
+* Scala.js version : 0.6.31
 
 
 NOTE: 
