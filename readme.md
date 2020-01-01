@@ -16,7 +16,7 @@ NOTE:
 
 **Light websocket server and browser client based on Rx principles**
 
-> - **Super light** - just [scala.js][1] for client, [java-websocket][2] for server, [monifu][3] for both and a few hundreds LOscalaC
+> - **Super light** - just [scala.js][1] for client, [java-websocket][2] for server, [monix][3] for both and a few hundreds LOscalaC
 > - **based on RX** - events and I/O handled using Observables and Observers
 
 ### Server
@@ -43,4 +43,4 @@ Please see WebSocketClientSuite and TestingServer for inspiration
 
   [1]: http://www.scala-js.org/
   [2]: https://github.com/TooTallNate/Java-WebSocket
-  [3]: https://github.com/monifu
+  [3]: https://github.com/monix
